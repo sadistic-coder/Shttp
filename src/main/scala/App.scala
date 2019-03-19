@@ -1,32 +1,27 @@
 import java.io.File
 
-import cats.effect._
-import cats.implicits._
-import org.http4s.{Header, HttpRoutes, Request, StaticFile, Status}
+import org.http4s.{HttpRoutes, StaticFile}
 import org.http4s.dsl.io._
 import org.http4s.server.blaze._
 import java.util.concurrent._
 
-import HikariApp.transactor
 import doobie.ExecutionContexts
 import doobie.hikari.HikariTransactor
 import cats.effect._
 import cats.implicits._
-import doobie._
 import doobie.implicits._
-import doobie.hikari._
 
 // static file
 import scala.concurrent.ExecutionContext
 
 object App extends IOApp {
 
-  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
+  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(100))
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   val transactor: Resource[IO, HikariTransactor[IO]] =
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](1) // our connect EC 이거 접속때마다 히카리 업데이드함
+      ce <- ExecutionContexts.fixedThreadPool[IO](1000) // our connect EC 이거 접속때마다 히카리 업데이드함
       te <- ExecutionContexts.cachedThreadPool[IO] // our transaction EC
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.h2.Driver",
@@ -43,22 +38,34 @@ object App extends IOApp {
 
   val helloWorldService = HttpRoutes.of[IO] {
     case request@GET -> Root => {
-      if (is_exist == 0) transactor.use {
-        xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
-      }.unsafeRunSync()
-      is_exist += 1
-
-      StaticFile.fromFile(new File("resource/main.html"), blockingEc, Some(request))
+      if (is_exist == 0) {
+        transactor.use {
+          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+        }.unsafeRunSync()
+        transactor.use {
+          xa => sql"insert into Loves values(0, 'las')".update.run.transact(xa)
+        }.unsafeRunSync()
+        is_exist += 1
+        count = 0
+      }
+      StaticFile
+        .fromFile(new File("resource/main.html"), blockingEc, Some(request))
         .getOrElseF(NotFound())
     }
     case request@GET -> Root / "heart" => {
-      if (is_exist == 0) transactor.use {
-        xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
-      }.unsafeRunSync()
-      is_exist += 1
+      if (is_exist == 0) {
+        transactor.use {
+          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+        }.unsafeRunSync()
+        transactor.use {
+          xa => sql"insert into Loves values(0, 'las')".update.run.transact(xa)
+        }.unsafeRunSync()
+        is_exist += 1
+        count = 0
+      }
 
       Ok(transactor.use {
-        xa => sql"select love from Loves where username='las'".query[Int].unique.transact(xa)
+        xa => sql"select love from Loves where username='las' limit 1".query[Int].unique.transact(xa)
       }.unsafeRunSync().toString())
     }
     case request@GET -> Root / "love" => {
@@ -67,7 +74,7 @@ object App extends IOApp {
           xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
         }.unsafeRunSync()
         transactor.use {
-          xa => sql"insert into Loves values(-2, 'las')".update.run.transact(xa)
+          xa => sql"insert into Loves values(0, 'las')".update.run.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
         count = 0
@@ -82,7 +89,7 @@ object App extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO]
-      .bindHttp(8080, "localhost")
+      .bindHttp(8080, "0.0.0.0")
       .withHttpApp(helloWorldService)
       .serve
       .compile
