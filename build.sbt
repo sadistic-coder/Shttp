@@ -16,11 +16,11 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
-  "org.http4s" %% "http4s-blaze-client" % http4sVersion
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+  "org.http4s" %% "http4s-twirl" % http4sVersion
 )
 scalacOptions ++= Seq("-Ypartial-unification")
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.3" % Runtime
-libraryDependencies += "org.http4s" %% "http4s-twirl" % "0.15.11"
 
 libraryDependencies ++= Seq(
   // Start with this one
@@ -34,3 +34,8 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.12"
+scalacOptions := Seq("-deprecation", "-encoding", "utf8")
+
+lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
+TwirlKeys.templateImports +=  "org.sadistix.shttp"
+sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value
