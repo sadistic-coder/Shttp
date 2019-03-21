@@ -29,7 +29,7 @@ object App extends IOApp {
 
   val transactor: Resource[IO, HikariTransactor[IO]] =
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](1000) // our connect EC 이거 접속때마다 히카리 업데이드함
+      ce <- ExecutionContexts.fixedThreadPool[IO](2) // our connect EC 이거 접속때마다 히카리 업데이드함
       te <- ExecutionContexts.cachedThreadPool[IO] // our transaction EC
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.h2.Driver",
