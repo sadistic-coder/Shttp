@@ -36,6 +36,4 @@ libraryDependencies ++= Seq(
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.12"
 scalacOptions := Seq("-deprecation", "-encoding", "utf8")
 
-lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
-TwirlKeys.templateImports +=  "org.sadistix.shttp"
-sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value
+enablePlugins(SbtTwirl)

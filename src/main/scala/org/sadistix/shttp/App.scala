@@ -3,7 +3,7 @@ package org.sadistix.shttp
 import java.io.File
 import java.util.concurrent.Executors
 
-import org.http4s.{HttpRoutes, Response, StaticFile}
+import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
 import org.http4s.server.blaze._
 import org.http4s.twirl._
@@ -23,14 +23,13 @@ import org.log4s
 
 object App extends IOApp {
 
-  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(100))
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   val logger = log4s.getLogger("LasLogger")
 
   val transactor: Resource[IO, HikariTransactor[IO]] =
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](1000) // our connect EC 이거 접속때마다 히카리 업데이드함
+      ce <- ExecutionContexts.fixedThreadPool[IO](2) // our connect EC 이거 접속때마다 히카리 업데이드함
       te <- ExecutionContexts.cachedThreadPool[IO] // our transaction EC
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.h2.Driver",
@@ -52,9 +51,7 @@ object App extends IOApp {
         }.unsafeRunSync()
         is_exist += 1
       }
-      StaticFile
-        .fromFile(new File("resource/main.html"), blockingEc, Some(request))
-        .getOrElseF(NotFound())
+      Ok(html.hello())
     }
     case request@GET -> Root / name => {
       if (is_exist == 0) {
@@ -63,9 +60,7 @@ object App extends IOApp {
         }.unsafeRunSync()
         is_exist += 1
       }
-      StaticFile
-        .fromFile(new File("resource/main.html"), blockingEc, Some(request))
-        .getOrElseF(NotFound())
+      Ok(html.hello())
     }
     case request@GET -> Root / "heart" => {
       if (is_exist == 0) {
