@@ -42,13 +42,16 @@ object App extends IOApp {
       )
     } yield xa
 
+  val table_create = sql"create table Loves(love integer(11), username varchar(20))".update.run
+
   var is_exist: Int = 0
 
   val helloWorldService = HttpRoutes.of[IO] {
     case request@GET -> Root => {
+
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
@@ -57,17 +60,17 @@ object App extends IOApp {
     case request@GET -> Root / name => {
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
 
-      Ok(html.hello("/"+name))
+      Ok(html.hello("/" + name))
     }
     case request@GET -> Root / "heart" => {
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
@@ -78,7 +81,7 @@ object App extends IOApp {
     case request@GET -> Root / "heart" / name => {
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
@@ -89,7 +92,7 @@ object App extends IOApp {
     case request@GET -> Root / "love" => {
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
@@ -101,7 +104,7 @@ object App extends IOApp {
     case request@GET -> Root / "love" / name => {
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
@@ -114,7 +117,7 @@ object App extends IOApp {
 
       if (is_exist == 0) {
         transactor.use {
-          xa => sql"create table Loves(love integer(11), username varchar(20))".update.run.transact(xa)
+          xa => table_create.transact(xa)
         }.unsafeRunSync()
         is_exist += 1
       }
@@ -125,7 +128,7 @@ object App extends IOApp {
       Ok("123")
     }
     case request@GET -> Root / "src" / filename => {
-      StaticFile.fromFile(new File("src/main/resources/"+filename), blockingEc, Some(request))
+      StaticFile.fromFile(new File("src/main/resources/" + filename), blockingEc, Some(request))
         .getOrElseF(NotFound())
     }
   }.orNotFound
