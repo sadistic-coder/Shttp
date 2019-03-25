@@ -43,89 +43,50 @@ object App extends IOApp {
     } yield xa
 
   val table_create = sql"create table Loves(love integer(11), username varchar(20))".update.run
+  val insert_admin = sql"insert into Loves values(0, 'admin')".update.run
+  val init_db = (table_create, insert_admin).mapN(_ + _)
+
+  val get_heart = (name: String) => sql"select love from Loves where username=$name limit 1".query[Int].unique
+  val love_user = (name: String) => sql"update Loves set love=love+1 where username=$name".update.run
+  val add_user = (name: String) => sql"insert into Loves values(0, ${name})".update.run
 
   var is_exist: Int = 0
 
   val helloWorldService = HttpRoutes.of[IO] {
-    case request@GET -> Root => {
-
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
+    case GET -> Root => {
       Ok(html.hello(""))
     }
-    case request@GET -> Root / name => {
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
-
+    case GET -> Root / name => {
       Ok(html.hello("/" + name))
     }
-    case request@GET -> Root / "heart" => {
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
+    case GET -> Root / "heart" => {
       Ok(transactor.use {
-        xa => sql"select love from Loves where username='admin' limit 1".query[Int].unique.transact(xa)
+        xa => get_heart.apply("admin").transact(xa)
       }.unsafeRunSync().toString())
     }
-    case request@GET -> Root / "heart" / name => {
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
+    case GET -> Root / "heart" / name => {
       Ok(transactor.use {
-        xa => sql"select love from Loves where username=$name limit 1".query[Int].unique.transact(xa)
+        xa => get_heart.apply(name).transact(xa)
       }.unsafeRunSync().toString())
     }
-    case request@GET -> Root / "love" => {
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
+    case GET -> Root / "love" => {
       transactor.use {
-        xa => sql"update Loves set love=love+1 where username='admin'".update.run.transact(xa)
+        xa => love_user.apply("admin").transact(xa)
       }.unsafeRunSync()
       Ok()
     }
-    case request@GET -> Root / "love" / name => {
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
+    case GET -> Root / "love" / name => {
       transactor.use {
-        xa => sql"update Loves set love=love+1 where username=$name".update.run.transact(xa)
+        xa => love_user.apply(name).transact(xa)
       }.unsafeRunSync()
       Ok()
     }
-    case request@GET -> Root / "user" / name => {
-
-      if (is_exist == 0) {
-        transactor.use {
-          xa => table_create.transact(xa)
-        }.unsafeRunSync()
-        is_exist += 1
-      }
+    case GET -> Root / "user" / name => {
       logger.info("User " + name + " is detected")
       transactor.use {
-        xa => sql"insert into Loves values(0, ${name})".update.run.transact(xa)
+        xa => add_user.apply(name).transact(xa)
       }.unsafeRunSync()
-      Ok("123")
+      Ok()
     }
     case request@GET -> Root / "src" / filename => {
       StaticFile.fromFile(new File("src/main/resources/" + filename), blockingEc, Some(request))
@@ -134,11 +95,16 @@ object App extends IOApp {
   }.orNotFound
 
   def run(args: List[String]): IO[ExitCode] =
-    BlazeServerBuilder[IO]
-      .bindHttp(8080, "0.0.0.0")
-      .withHttpApp(helloWorldService)
-      .serve
-      .compile
-      .drain
-      .as(ExitCode.Success)
+    transactor.use {
+      xa => init_db.transact(xa)
+    }.flatMap(
+      (a) => {
+        BlazeServerBuilder[IO]
+          .bindHttp(8080, "0.0.0.0")
+          .withHttpApp(helloWorldService)
+          .serve
+          .compile
+          .drain
+          .as(ExitCode.Success)
+      })
 }
