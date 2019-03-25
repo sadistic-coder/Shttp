@@ -1,1 +1,61 @@
-<h1>LasWonho</h1>
+<html>
+    <style>
+    .center {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translateX(-50%) translateY(-50%);
+    }
+
+    .love_count {
+        font-size: 40px;
+    }
+
+    .my-image {
+        width: 20%;
+        height: auto;
+    }
+</style>
+    <script>
+    function FindName(name) {
+        return document.getElementsByName(name)[0];
+    }
+
+    var httpRequest = new XMLHttpRequest();
+    var username = "";
+
+    function heart() {
+        if (!httpRequest) {
+            alert("Networkin' Error");
+        }
+        httpRequest.onreadystatechange = get_heart;
+        httpRequest.open("GET", "/heart"+username, true);
+        httpRequest.send();
+    }
+
+    heart()
+
+    function get_heart() {
+        if (httpRequest.readyState === XMLHttpRequest.DONE) {
+            console.log(httpRequest.responseText);
+            FindName("count").innerHTML = httpRequest.responseText
+        }
+    }
+
+    function love() {
+        var httpRequest = new XMLHttpRequest();
+        if (!httpRequest) {
+            alert("Networkin' Error");
+        }
+        httpRequest.onreadystatechange = heart;
+        httpRequest.open("GET", "/love"+username, true);
+        httpRequest.send();
+    }
+
+</script>
+    <div>
+        <img src="/src/Heart.jpg" class="center my-image" onclick="love()">
+        <div class="center love_count" name="count">
+        </div>
+    </div>
+</html>
