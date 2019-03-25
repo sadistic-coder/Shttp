@@ -3,7 +3,7 @@ package org.sadistix.shttp
 import java.io.File
 import java.util.concurrent.Executors
 
-import org.http4s.HttpRoutes
+import org.http4s.{HttpRoutes, StaticFile}
 import org.http4s.dsl.io._
 import org.http4s.server.blaze._
 import org.http4s.twirl._
@@ -24,6 +24,7 @@ import org.log4s
 object App extends IOApp {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
 
   val logger = log4s.getLogger("LasLogger")
 
@@ -121,6 +122,10 @@ object App extends IOApp {
         xa => sql"insert into Loves values(0, ${name})".update.run.transact(xa)
       }.unsafeRunSync()
       Ok("123")
+    }
+    case request@GET -> Root / "src" / filename => {
+      StaticFile.fromFile(new File("src/main/resources/"+filename), blockingEc, Some(request))
+        .getOrElseF(NotFound())
     }
   }.orNotFound
 
