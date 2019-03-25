@@ -34,7 +34,7 @@ object App extends IOApp {
       te <- ExecutionContexts.cachedThreadPool[IO] // our transaction EC
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.h2.Driver",
-        "jdbc:h2:mem://202.182.125.19/scala;DB_CLOSE_DELAY=-1",
+        "jdbc:h2:mem://0.0.0.0/scala;DB_CLOSE_DELAY=-1",
         "root",
         "6644",
         ce, // await connection here
@@ -52,7 +52,7 @@ object App extends IOApp {
         }.unsafeRunSync()
         is_exist += 1
       }
-      Ok(html.hello())
+      Ok(html.hello(""))
     }
     case request@GET -> Root / name => {
       if (is_exist == 0) {
@@ -61,7 +61,8 @@ object App extends IOApp {
         }.unsafeRunSync()
         is_exist += 1
       }
-      Ok(html.hello())
+
+      Ok(html.hello("/"+name))
     }
     case request@GET -> Root / "heart" => {
       if (is_exist == 0) {

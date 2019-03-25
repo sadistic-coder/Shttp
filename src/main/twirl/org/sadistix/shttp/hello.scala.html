@@ -1,3 +1,4 @@
+@(name: String)
 <html>
     <style>
     .center {
@@ -22,7 +23,7 @@
     }
 
     var httpRequest = new XMLHttpRequest();
-    var username = "";
+    var username = "@name";
 
     function heart() {
         if (!httpRequest) {
