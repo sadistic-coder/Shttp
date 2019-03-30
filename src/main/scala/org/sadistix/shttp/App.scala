@@ -98,7 +98,7 @@ object App extends IOApp {
     transactor.use {
       xa => init_db.transact(xa)
     }.flatMap(
-      (a) => {
+      (code) => {
         BlazeServerBuilder[IO]
           .bindHttp(8080, "0.0.0.0")
           .withHttpApp(helloWorldService)
