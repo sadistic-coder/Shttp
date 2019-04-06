@@ -17,10 +17,19 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
-  "org.http4s" %% "http4s-twirl" % http4sVersion
+  "org.http4s" %% "http4s-twirl" % http4sVersion,
+  "org.http4s" %% "http4s-circe" % http4sVersion,
+  "io.circe" %% "circe-generic" % "0.10.0-M1",
+  "io.circe" %% "circe-literal" % "0.10.0-M1"
 )
 scalacOptions ++= Seq("-Ypartial-unification")
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+libraryDependencies += "org.http4s" %% "http4s-json4s-native" % http4sVersion
+libraryDependencies += "org.http4s" %% "http4s-json4s-jackson" % http4sVersion
+
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.3" % Runtime
+
 
 libraryDependencies ++= Seq(
   // Start with this one
@@ -37,3 +46,9 @@ libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.12"
 scalacOptions := Seq("-deprecation", "-encoding", "utf8")
 
 enablePlugins(SbtTwirl)
+
+val circeVersion = "0.10.0"
+
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
