@@ -32,13 +32,13 @@ import org.log4s
 object App extends IOApp {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(8))
 
   val logger = log4s.getLogger("LasLogger")
 
   val transactor: Resource[IO, HikariTransactor[IO]] =
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](2)
+      ce <- ExecutionContexts.fixedThreadPool[IO](4)
       te <- ExecutionContexts.cachedThreadPool[IO]
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.h2.Driver",
@@ -62,7 +62,7 @@ object App extends IOApp {
 
   val loveService = HttpRoutes.of[IO] {
     case GET -> Root => {
-      Ok(html.hello(""))
+      Ok(html.firstPage())
     }
     case GET -> Root / "heart" => {
       val hearts = transactor.use {
@@ -89,9 +89,14 @@ object App extends IOApp {
         transactor.use {
           xa => add_user.apply(name).transact(xa)
         }.unsafeRunSync()
-        Ok()
-      } catch {
         Ok(html.hello("/" + name))
+      } catch {
+        case _: Throwable => {
+          logger.info("Already Joined User");
+          Ok(html.hello("/" + name))
+        }
+      }
+      finally {
       }
     }
     case request@GET -> Root / "src" / filename => {
