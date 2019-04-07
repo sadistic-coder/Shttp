@@ -32,13 +32,13 @@ import org.log4s
 object App extends IOApp {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(8))
+  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(32))
 
   val logger = log4s.getLogger("LasLogger")
 
   val transactor: Resource[IO, HikariTransactor[IO]] =
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](4)
+      ce <- ExecutionContexts.fixedThreadPool[IO](16)
       te <- ExecutionContexts.cachedThreadPool[IO]
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.h2.Driver",
